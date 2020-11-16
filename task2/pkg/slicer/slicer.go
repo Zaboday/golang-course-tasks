@@ -1,23 +1,22 @@
 package slicer
 
 func Insert(x int, sortedSlice []int) []int {
-	var tmp []int
-	var added bool
+	var tmp = make([]int, 0, len(sortedSlice)+1)
 
-	// Добавляем x в начало среза если входной срез пустой или его первый элемент больше чем x
 	if len(sortedSlice) == 0 || x < sortedSlice[0] {
+		// Добавляем x в начало среза если входной срез пустой или его первый элемент больше чем x
 		tmp = append(tmp, x)
-		added = true
-	}
-
-	for _, elem := range sortedSlice {
-		if x <= elem {
-			if !added {
+		tmp = append(tmp, sortedSlice[0:]...)
+	} else {
+		for i, elem := range sortedSlice {
+			if x <= elem {
 				tmp = append(tmp, x)
-				added = true
+				tmp = append(tmp, sortedSlice[i:]...)
+				break
+
 			}
+			tmp = append(tmp, elem)
 		}
-		tmp = append(tmp, elem)
 	}
 
 	// Добавляем в конец среза если x больше последнего элемента
@@ -29,12 +28,13 @@ func Insert(x int, sortedSlice []int) []int {
 }
 
 func Delete(x int, anySlice []int) []int {
-	var tmp []int
+	var tmp = make([]int, 0, len(anySlice))
 	for _, elem := range anySlice {
 		if x == elem {
 			continue
 		}
 		tmp = append(tmp, elem)
 	}
+
 	return tmp
 }
