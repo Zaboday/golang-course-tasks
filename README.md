@@ -6,3 +6,9 @@ Task 1
 ---------
 
 Need make "Hello world" application.
+
+
+Task 2
+---------
+
+Insert / Delete for sorted slices.
