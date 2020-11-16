@@ -21,7 +21,7 @@ func main() {
 		if x >= 0 {
 			sorted = slicer.Insert(x, sorted)
 		} else {
-			sorted = slicer.Delete(x*-1, sorted)
+			sorted = slicer.Delete(-x, sorted)
 		}
 
 		fmt.Println(sorted)

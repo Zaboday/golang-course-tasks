@@ -11,14 +11,11 @@ func Insert(x int, sortedSlice []int) []int {
 	}
 
 	for _, elem := range sortedSlice {
-		if x < elem {
+		if x <= elem {
 			if !added {
 				tmp = append(tmp, x)
 				added = true
 			}
-		} else if x == elem {
-			// не добавляем x элемент если он уже есть в срезе
-			added = true
 		}
 		tmp = append(tmp, elem)
 	}
