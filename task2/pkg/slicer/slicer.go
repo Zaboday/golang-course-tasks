@@ -27,6 +27,11 @@ func Insert(x int, sortedSlice []int) []int {
 	return tmp
 }
 
+func Insert2(x int, sortedSlice []int) []int {
+	//TODO: implement insert with copy
+	return make([]int, 1)
+}
+
 func Delete(x int, anySlice []int) []int {
 	var tmp = make([]int, 0, len(anySlice))
 	for _, elem := range anySlice {

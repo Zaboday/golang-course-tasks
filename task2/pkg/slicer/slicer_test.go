@@ -57,11 +57,23 @@ func TestDelete(t *testing.T) {
 var result []int
 var n = 1000
 
-func BenchmarkInsert5(b *testing.B) {
+func BenchmarkInsert1_5(b *testing.B)   { benchmarkInsert(5, b) }
+func BenchmarkInsert1_50(b *testing.B)  { benchmarkInsert(50, b) }
+func BenchmarkInsert1_100(b *testing.B) { benchmarkInsert(100, b) }
+
+func BenchmarkInsert2_5(b *testing.B)   { benchmarkInsert2(5, b) }
+func BenchmarkInsert2_50(b *testing.B)  { benchmarkInsert2(50, b) }
+func BenchmarkInsert2_100(b *testing.B) { benchmarkInsert2(100, b) }
+
+func BenchmarkDelete5(b *testing.B)   { benchmarkDelete(5, b) }
+func BenchmarkDelete50(b *testing.B)  { benchmarkDelete(50, b) }
+func BenchmarkDelete100(b *testing.B) { benchmarkDelete(100, b) }
+
+func benchmarkInsert(size int, b *testing.B) {
 	var r []int
 	rand.Seed(1)
 	var x = rand.Intn(n)
-	var sorted = makeSortedSlice(5, n)
+	var sorted = makeSortedSlice(size, n)
 
 	for i := 0; i < b.N; i++ {
 		r = Insert(x, sorted)
@@ -69,58 +81,24 @@ func BenchmarkInsert5(b *testing.B) {
 	result = r
 }
 
-func BenchmarkInsert50(b *testing.B) {
+func benchmarkInsert2(size int, b *testing.B) {
 	var r []int
 	rand.Seed(1)
 	var x = rand.Intn(n)
-	var sorted = makeSortedSlice(50, n)
+	var sorted = makeSortedSlice(size, n)
 
 	for i := 0; i < b.N; i++ {
-		r = Insert(x, sorted)
+		r = Insert2(x, sorted)
 	}
 	result = r
 }
 
-func BenchmarkInsert100(b *testing.B) {
+func benchmarkDelete(size int, b *testing.B) {
 	var r []int
 	rand.Seed(1)
 	var x = rand.Intn(n)
-	var sorted = makeSortedSlice(100, n)
+	var sorted = makeSortedSlice(size, n)
 
-	for i := 0; i < b.N; i++ {
-		r = Insert(x, sorted)
-	}
-	result = r
-}
-
-func BenchmarkDelete5(b *testing.B) {
-	var r []int
-	rand.Seed(1)
-	var x = rand.Intn(n)
-	var sorted = makeSortedSlice(5, n)
-
-	for i := 0; i < b.N; i++ {
-		r = Delete(x, sorted)
-	}
-	result = r
-}
-
-func BenchmarkDelete50(b *testing.B) {
-	var r []int
-	rand.Seed(1)
-	var x = rand.Intn(n)
-	var sorted = makeSortedSlice(50, n)
-	for i := 0; i < b.N; i++ {
-		r = Delete(x, sorted)
-	}
-	result = r
-}
-
-func BenchmarkDelete100(b *testing.B) {
-	var r []int
-	rand.Seed(1)
-	var x = rand.Intn(n)
-	var sorted = makeSortedSlice(100, n)
 	for i := 0; i < b.N; i++ {
 		r = Delete(x, sorted)
 	}
@@ -140,7 +118,7 @@ func isEqualSlices(a, b []int) bool {
 }
 
 func makeSortedSlice(size int, n int) []int {
-	var s []int
+	var s = make([]int, 0, size)
 	n = rand.Intn(n)
 
 	for i := 0; i < size; i++ {
