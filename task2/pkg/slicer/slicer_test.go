@@ -57,10 +57,12 @@ func TestDelete(t *testing.T) {
 var result []int
 var n = 1000
 
+// Кейс с превыделением памяти для слайса и append (чуть быстрее чем c copy)
 func BenchmarkInsert1_5(b *testing.B)   { benchmarkInsert(5, b) }
 func BenchmarkInsert1_50(b *testing.B)  { benchmarkInsert(50, b) }
 func BenchmarkInsert1_100(b *testing.B) { benchmarkInsert(100, b) }
 
+// Кейс с превыделением памяти для слайса и copy
 func BenchmarkInsert2_5(b *testing.B)   { benchmarkInsert2(5, b) }
 func BenchmarkInsert2_50(b *testing.B)  { benchmarkInsert2(50, b) }
 func BenchmarkInsert2_100(b *testing.B) { benchmarkInsert2(100, b) }
