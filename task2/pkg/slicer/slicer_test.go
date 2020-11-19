@@ -15,10 +15,13 @@ type testCase struct {
 func TestInsert(t *testing.T) {
 	cases := []testCase{
 		{10, []int{}, []int{10}},
-		{10, []int{10}, []int{10}},
-		{11, []int{10, 11}, []int{10, 11}},
+		{10, []int{10}, []int{10, 10}},
+		{11, []int{10, 11}, []int{10, 11, 11}},
 		{11, []int{3, 4}, []int{3, 4, 11}},
 		{1, []int{2, 3}, []int{1, 2, 3}},
+		{1, []int{1, 2, 4}, []int{1, 1, 2, 4}},
+		{0, []int{1, 500}, []int{0, 1, 500}},
+		{0, []int{0, 500}, []int{0, 0, 500}},
 	}
 
 	for i, c := range cases {
@@ -34,9 +37,12 @@ func TestDelete(t *testing.T) {
 		{10, []int{}, []int{}},
 		{10, []int{10}, []int{}},
 		{11, []int{10, 11}, []int{10}},
-		{11, []int{3, 4}, []int{3, 4}},
+		{11, []int{10, 11, 11, 11, 11}, []int{10}},
+		{0, []int{0, 3, 4}, []int{3, 4}},
 		{1, []int{2, 3, 1}, []int{2, 3}},
+		{1, []int{2, 3, 1, 1}, []int{2, 3}},
 		{1, []int{1, 2, 3}, []int{2, 3}},
+		{1, []int{1, 1, 2, 3}, []int{2, 3}},
 	}
 
 	for i, c := range cases {
@@ -51,11 +57,25 @@ func TestDelete(t *testing.T) {
 var result []int
 var n = 1000
 
-func BenchmarkInsert5(b *testing.B) {
+// Кейс с превыделением памяти для слайса и append (чуть быстрее чем c copy)
+func BenchmarkInsert1_5(b *testing.B)   { benchmarkInsert(5, b) }
+func BenchmarkInsert1_50(b *testing.B)  { benchmarkInsert(50, b) }
+func BenchmarkInsert1_100(b *testing.B) { benchmarkInsert(100, b) }
+
+// Кейс с превыделением памяти для слайса и copy
+func BenchmarkInsert2_5(b *testing.B)   { benchmarkInsert2(5, b) }
+func BenchmarkInsert2_50(b *testing.B)  { benchmarkInsert2(50, b) }
+func BenchmarkInsert2_100(b *testing.B) { benchmarkInsert2(100, b) }
+
+func BenchmarkDelete5(b *testing.B)   { benchmarkDelete(5, b) }
+func BenchmarkDelete50(b *testing.B)  { benchmarkDelete(50, b) }
+func BenchmarkDelete100(b *testing.B) { benchmarkDelete(100, b) }
+
+func benchmarkInsert(size int, b *testing.B) {
 	var r []int
 	rand.Seed(1)
 	var x = rand.Intn(n)
-	var sorted = []int{rand.Intn(n), rand.Intn(n), rand.Intn(n), rand.Intn(n), rand.Intn(n)}
+	var sorted = makeSortedSlice(size, n)
 
 	for i := 0; i < b.N; i++ {
 		r = Insert(x, sorted)
@@ -63,102 +83,28 @@ func BenchmarkInsert5(b *testing.B) {
 	result = r
 }
 
-func BenchmarkInsert50(b *testing.B) {
+func benchmarkInsert2(size int, b *testing.B) {
 	var r []int
 	rand.Seed(1)
 	var x = rand.Intn(n)
-	var sorted = randSliceSize50()
+	var sorted = makeSortedSlice(size, n)
 
 	for i := 0; i < b.N; i++ {
-		r = Insert(x, sorted)
+		r = Insert2(x, sorted)
 	}
 	result = r
 }
 
-func BenchmarkInsert100(b *testing.B) {
+func benchmarkDelete(size int, b *testing.B) {
 	var r []int
 	rand.Seed(1)
 	var x = rand.Intn(n)
-	var sorted = randSliceSize100()
-
-	for i := 0; i < b.N; i++ {
-		r = Insert(x, sorted)
-	}
-	result = r
-}
-
-func BenchmarkDelete5(b *testing.B) {
-	var r []int
-	rand.Seed(1)
-	var x = rand.Intn(n)
-	var sorted = []int{rand.Intn(n), rand.Intn(n), rand.Intn(n), rand.Intn(n), rand.Intn(n)}
+	var sorted = makeSortedSlice(size, n)
 
 	for i := 0; i < b.N; i++ {
 		r = Delete(x, sorted)
 	}
 	result = r
-}
-
-func BenchmarkDelete50(b *testing.B) {
-	var r []int
-	rand.Seed(1)
-	var x = rand.Intn(n)
-	var sorted = randSliceSize50()
-	for i := 0; i < b.N; i++ {
-		r = Delete(x, sorted)
-	}
-	result = r
-}
-
-func BenchmarkDelete100(b *testing.B) {
-	var r []int
-	rand.Seed(1)
-	var x = rand.Intn(n)
-	var sorted = randSliceSize100()
-	for i := 0; i < b.N; i++ {
-		r = Delete(x, sorted)
-	}
-	result = r
-}
-
-func randSliceSize50() []int {
-	return []int{
-		rand.Intn(n), rand.Intn(n), rand.Intn(n), rand.Intn(n), rand.Intn(n),
-		rand.Intn(n), rand.Intn(n), rand.Intn(n), rand.Intn(n), rand.Intn(n),
-		rand.Intn(n), rand.Intn(n), rand.Intn(n), rand.Intn(n), rand.Intn(n),
-		rand.Intn(n), rand.Intn(n), rand.Intn(n), rand.Intn(n), rand.Intn(n),
-		rand.Intn(n), rand.Intn(n), rand.Intn(n), rand.Intn(n), rand.Intn(n),
-		rand.Intn(n), rand.Intn(n), rand.Intn(n), rand.Intn(n), rand.Intn(n),
-		rand.Intn(n), rand.Intn(n), rand.Intn(n), rand.Intn(n), rand.Intn(n),
-		rand.Intn(n), rand.Intn(n), rand.Intn(n), rand.Intn(n), rand.Intn(n),
-		rand.Intn(n), rand.Intn(n), rand.Intn(n), rand.Intn(n), rand.Intn(n),
-		rand.Intn(n), rand.Intn(n), rand.Intn(n), rand.Intn(n), rand.Intn(n),
-	}
-}
-
-func randSliceSize100() []int {
-	return []int{
-		rand.Intn(n), rand.Intn(n), rand.Intn(n), rand.Intn(n), rand.Intn(n),
-		rand.Intn(n), rand.Intn(n), rand.Intn(n), rand.Intn(n), rand.Intn(n),
-		rand.Intn(n), rand.Intn(n), rand.Intn(n), rand.Intn(n), rand.Intn(n),
-		rand.Intn(n), rand.Intn(n), rand.Intn(n), rand.Intn(n), rand.Intn(n),
-		rand.Intn(n), rand.Intn(n), rand.Intn(n), rand.Intn(n), rand.Intn(n),
-		rand.Intn(n), rand.Intn(n), rand.Intn(n), rand.Intn(n), rand.Intn(n),
-		rand.Intn(n), rand.Intn(n), rand.Intn(n), rand.Intn(n), rand.Intn(n),
-		rand.Intn(n), rand.Intn(n), rand.Intn(n), rand.Intn(n), rand.Intn(n),
-		rand.Intn(n), rand.Intn(n), rand.Intn(n), rand.Intn(n), rand.Intn(n),
-		rand.Intn(n), rand.Intn(n), rand.Intn(n), rand.Intn(n), rand.Intn(n),
-		rand.Intn(n), rand.Intn(n), rand.Intn(n), rand.Intn(n), rand.Intn(n),
-		rand.Intn(n), rand.Intn(n), rand.Intn(n), rand.Intn(n), rand.Intn(n),
-		rand.Intn(n), rand.Intn(n), rand.Intn(n), rand.Intn(n), rand.Intn(n),
-		rand.Intn(n), rand.Intn(n), rand.Intn(n), rand.Intn(n), rand.Intn(n),
-		rand.Intn(n), rand.Intn(n), rand.Intn(n), rand.Intn(n), rand.Intn(n),
-		rand.Intn(n), rand.Intn(n), rand.Intn(n), rand.Intn(n), rand.Intn(n),
-		rand.Intn(n), rand.Intn(n), rand.Intn(n), rand.Intn(n), rand.Intn(n),
-		rand.Intn(n), rand.Intn(n), rand.Intn(n), rand.Intn(n), rand.Intn(n),
-		rand.Intn(n), rand.Intn(n), rand.Intn(n), rand.Intn(n), rand.Intn(n),
-		rand.Intn(n), rand.Intn(n), rand.Intn(n), rand.Intn(n), rand.Intn(n),
-	}
 }
 
 func isEqualSlices(a, b []int) bool {
@@ -171,4 +117,15 @@ func isEqualSlices(a, b []int) bool {
 		}
 	}
 	return true
+}
+
+func makeSortedSlice(size int, n int) []int {
+	var s = make([]int, 0, size)
+	n = rand.Intn(n)
+
+	for i := 0; i < size; i++ {
+		s = append(s, n+i)
+	}
+
+	return s
 }
