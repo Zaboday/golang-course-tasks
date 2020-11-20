@@ -2,11 +2,12 @@ package main
 
 import (
 	"fmt"
+	"main/pkg/linkedlist"
 	"main/pkg/slicer"
 )
 
 func main() {
-	callSliceManager()
+	callLinkedList()
 }
 
 func callSliceManager() {
@@ -33,8 +34,8 @@ func callSliceManager() {
 	}
 }
 
-/*func callLinkedList() {
-	var l List
+func callLinkedList() {
+	var l linkedlist.List
 	var x int
 
 	for {
@@ -55,4 +56,4 @@ func callSliceManager() {
 		fmt.Println(l.DisplayChain())
 	}
 
-}*/
+}
