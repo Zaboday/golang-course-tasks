@@ -3,35 +3,11 @@ package main
 import (
 	"fmt"
 	"main/pkg/linkedlist"
-	"main/pkg/slicer"
+	//"main/pkg/slicer"
 )
 
 func main() {
 	callLinkedList()
-}
-
-func callSliceManager() {
-	var sorted []int
-	var manager slicer.SliceManager
-	var x int
-
-	for {
-		fmt.Scan(&x)
-
-		if x == 999 {
-			// Exit app
-			fmt.Println(sorted)
-			return
-		}
-
-		if x >= 0 {
-			sorted = manager.Insert(x, sorted)
-		} else {
-			sorted = manager.Delete(-x, sorted)
-		}
-
-		fmt.Println(sorted)
-	}
 }
 
 func callLinkedList() {
@@ -57,3 +33,27 @@ func callLinkedList() {
 	}
 
 }
+
+/*func callSliceManager() {
+	var sorted []int
+	var manager slicer.SliceManager
+	var x int
+
+	for {
+		fmt.Scan(&x)
+
+		if x == 999 {
+			// Exit app
+			fmt.Println(sorted)
+			return
+		}
+
+		if x >= 0 {
+			sorted = manager.Insert(x, sorted)
+		} else {
+			sorted = manager.Delete(-x, sorted)
+		}
+
+		fmt.Println(sorted)
+	}
+}*/

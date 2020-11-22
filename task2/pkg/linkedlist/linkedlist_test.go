@@ -128,8 +128,8 @@ func TestLinkedListGetMaxError(t *testing.T) {
 		t.Errorf("Invalid err value for emty list")
 	}
 
-	if err.Error() != "the list is empty" {
-
+	if err != nil && err.Error() != "the list is empty" {
+		t.Errorf("Invalid err message")
 	}
 }
 
@@ -146,7 +146,7 @@ func TestLinkedListGetMinError(t *testing.T) {
 		t.Errorf("Invalid err value for emty list")
 	}
 
-	if err.Error() != "the list is empty" {
-
+	if err != nil && err.Error() != "the list is empty" {
+		t.Errorf("Invalid err message")
 	}
 }
