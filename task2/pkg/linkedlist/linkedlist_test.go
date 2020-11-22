@@ -111,7 +111,7 @@ func TestLinkedListGetMin(t *testing.T) {
 	list.Insert(10000)
 	min, _ := list.getMin()
 	if min != 60 {
-		t.Errorf("getMax test. insert low value %d and getMax %d expected %d", 1, min, 255)
+		t.Errorf("getMin test. insert low value %d and getMin %d expected %d", 1, min, 60)
 	}
 }
 

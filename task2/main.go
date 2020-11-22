@@ -2,15 +2,15 @@ package main
 
 import (
 	"fmt"
-	"main/pkg/linkedlist"
-	//"main/pkg/slicer"
+	//"main/pkg/linkedlist"
+	"main/pkg/slicer"
 )
 
 func main() {
-	callLinkedList()
+	callSliceManager()
 }
 
-func callLinkedList() {
+/*func callLinkedList() {
 	var l linkedlist.List
 	var x int
 
@@ -32,10 +32,10 @@ func callLinkedList() {
 		fmt.Println(l.DisplayChain())
 	}
 
-}
+}*/
 
-/*func callSliceManager() {
-	var sorted []int
+func callSliceManager() {
+	var result []int
 	var manager slicer.SliceManager
 	var x int
 
@@ -44,16 +44,16 @@ func callLinkedList() {
 
 		if x == 999 {
 			// Exit app
-			fmt.Println(sorted)
+			fmt.Println("Exit code")
 			return
 		}
 
 		if x >= 0 {
-			sorted = manager.Insert(x, sorted)
+			result = manager.Insert(x)
 		} else {
-			sorted = manager.Delete(-x, sorted)
+			result = manager.Delete(-x)
 		}
 
-		fmt.Println(sorted)
+		fmt.Println(result)
 	}
-}*/
+}
