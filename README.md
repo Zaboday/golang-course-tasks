@@ -12,3 +12,8 @@ Task 2
 ---------
 
 Insert / Delete for sorted slices.
+
+Task 3
+---------
+
+Find top 10 words in text
