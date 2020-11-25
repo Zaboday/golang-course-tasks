@@ -6,6 +6,7 @@ import (
 	"os"
 	"sort"
 	"strings"
+	"unicode"
 )
 
 func main() {
@@ -23,9 +24,14 @@ func main() {
 		lineWords := strings.Fields(line)
 		fillStopWordsByLine(lineWords, stopWords)
 
+		var prevWord string
 		for _, word := range lineWords {
-			//var prevWord string
 			_, isInResult := result[word]
+
+			if prevWord != "" && isStopWords(prevWord, word) {
+				stopWords[word] = 1
+				stopWords[prevWord] = 1
+			}
 
 			if isInResult {
 				result[word]++
@@ -35,10 +41,22 @@ func main() {
 			if isValidWord(word) {
 				result[word] = 1
 			}
+
+			prevWord = word
+		}
+	}
+	showTop(result, stopWords, 10)
+}
+
+func isStopWords(prevWord string, currWord string) bool {
+	if prevWord[len(prevWord)-1] == 46 {
+		r := []rune(currWord)
+		if unicode.IsUpper(r[0]) {
+			return true
 		}
 	}
 
-	showTop(result, stopWords, 10)
+	return false
 }
 
 func fillStopWordsByLine(line []string, stopWords map[string]int) {
