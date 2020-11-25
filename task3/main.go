@@ -4,44 +4,62 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"sort"
+	"strings"
 )
 
 func main() {
-	//result := make(map[string]int)
 	fileName := "./files/src.txt"
-	/*words, err := getWord(fileName)
-	if err != nil {
-		panic(err)
-	}
-	for _, word := range words {
+	result := make(map[string]int)
+	stopWords := make(map[string]int)
 
-		if !isValidWord(word) {
-			continue
-		}
-		count, isOk := result[word]
-
-		if isOk != true {
-			result[word] = count
-			continue
-		}
-
-		result[word]++
-	}*/
-	lines, err := getLines(fileName)
+	lines, err := getLinesFromFile(fileName)
 	if err != nil {
 		panic(err)
 	}
 
 	for _, line := range lines {
-		fmt.Println(line)
+
+		lineWords := strings.Fields(line)
+		fillStopWordsByLine(lineWords, stopWords)
+
+		for _, word := range lineWords {
+			//var prevWord string
+			_, isInResult := result[word]
+
+			if isInResult {
+				result[word]++
+				continue
+			}
+
+			if isValidWord(word) {
+				result[word] = 1
+			}
+		}
+	}
+
+	showTop(result, stopWords, 10)
+}
+
+func fillStopWordsByLine(line []string, stopWords map[string]int) {
+	if len(line) == 0 {
+		return
+	}
+
+	if isValidWord(line[0]) {
+		stopWords[line[0]] = 1
+	}
+
+	if isValidWord(line[len(line)-1]) {
+		stopWords[line[len(line)-1]] = 1
 	}
 }
 
-func isValidWord(w string) bool {
-	return len(w) > 3
+func isValidWord(word string) bool {
+	return len(word) > 3
 }
 
-func getLines(path string) ([]string, error) {
+func getLinesFromFile(path string) ([]string, error) {
 
 	file, err := os.Open(path)
 	if err != nil {
@@ -63,21 +81,27 @@ func getLines(path string) ([]string, error) {
 	return lines, nil
 }
 
-func getWord(path string) ([]string, error) {
-	file, err := os.Open(path)
-	if err != nil {
-		return nil, err
-	}
-	defer file.Close()
-
-	sc := bufio.NewScanner(file)
-	sc.Split(bufio.ScanWords)
-
-	var words []string
-
-	for sc.Scan() {
-		words = append(words, sc.Text())
+func showTop(words map[string]int, stopWords map[string]int, topSize int) {
+	type kv struct {
+		Key   string
+		Value int
 	}
 
-	return words, nil
+	s := make([]kv, len(words), len(words))
+	for k, v := range words {
+		_, isStopWord := stopWords[k]
+		if !isStopWord {
+			s = append(s, kv{k, v})
+		}
+	}
+
+	sort.Slice(s, func(i, j int) bool {
+		return s[i].Value > s[j].Value
+	})
+
+	for i, kv := range s {
+		if i < topSize {
+			fmt.Printf("%d. %s: %d\n", i+1, kv.Key, kv.Value)
+		}
+	}
 }
