@@ -1,14 +1,14 @@
 #Результат работы приложения
 
 ```
-1. love: 2 [entrance:  3]
-2. only: 2 [entrance:  52]
-3. strong,: 2 [entrance:  63]
-4. story,: 1 [entrance:  4]
-5. which: 1 [entrance:  5]
-6. conquered: 1 [entrance:  6]
-7. whole: 1 [entrance:  8]
-8. world: 1 [entrance:  9]
-9. became: 1 [entrance:  11]
-10. benchmark: 1 [entrance:  13]
+1. said: 164 [entrance:  136]
+2. with: 128 [entrance:  53]
+3. that: 117 [entrance:  35]
+4. were: 86 [entrance:  29]
+5. from: 67 [entrance:  48]
+6. went: 61 [entrance:  333]
+7. about: 58 [entrance:  119]
+8. going: 49 [entrance:  147]
+9. when: 41 [entrance:  17]
+10. they: 41 [entrance:  434]
 ```
