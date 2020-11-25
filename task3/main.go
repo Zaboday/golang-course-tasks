@@ -13,12 +13,14 @@ func main() {
 	fileName := "./files/src.txt"
 	result := make(map[string]int)
 	stopWords := make(map[string]int)
+	order := make(map[string]int)
 
 	lines, err := getLinesFromFile(fileName)
 	if err != nil {
 		panic(err)
 	}
 
+	i := 0
 	for _, line := range lines {
 
 		lineWords := strings.Fields(line)
@@ -39,13 +41,15 @@ func main() {
 			}
 
 			if isValidWord(word) {
+				order[word] = i
 				result[word] = 1
 			}
 
 			prevWord = word
+			i++
 		}
 	}
-	showTop(result, stopWords, 10)
+	showTop(result, order, stopWords, 10)
 }
 
 func isStopWords(prevWord string, currWord string) bool {
@@ -99,7 +103,7 @@ func getLinesFromFile(path string) ([]string, error) {
 	return lines, nil
 }
 
-func showTop(words map[string]int, stopWords map[string]int, topSize int) {
+func showTop(words map[string]int, order map[string]int, stopWords map[string]int, topSize int) {
 	type kv struct {
 		Key   string
 		Value int
@@ -114,12 +118,16 @@ func showTop(words map[string]int, stopWords map[string]int, topSize int) {
 	}
 
 	sort.Slice(s, func(i, j int) bool {
-		return s[i].Value > s[j].Value
+		// Сортируем в соответствии с позицией первого вхождения.
+		a := s[i].Value*10000 + (1000 - order[s[i].Key])
+		b := s[j].Value*10000 + (1000 - order[s[j].Key])
+
+		return a > b
 	})
 
 	for i, kv := range s {
 		if i < topSize {
-			fmt.Printf("%d. %s: %d\n", i+1, kv.Key, kv.Value)
+			fmt.Printf("%d. %s: %d [entrance:  %d]\n", i+1, kv.Key, kv.Value, order[kv.Key])
 		}
 	}
 }
