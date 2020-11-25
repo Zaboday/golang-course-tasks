@@ -24,15 +24,15 @@ func main() {
 		lineWords := strings.Fields(line)
 		fillStopWordsByLine(lineWords, stopWords)
 
-		var prevWord string
+		prevWord := ""
 		for _, word := range lineWords {
-			_, isInResult := result[word]
 
 			if prevWord != "" && isStopWords(prevWord, word) {
 				stopWords[word] = 1
 				stopWords[prevWord] = 1
 			}
 
+			_, isInResult := result[word]
 			if isInResult {
 				result[word]++
 				continue
