@@ -5,7 +5,7 @@ import (
 )
 
 func main() {
-	fileName := "./files/src.txt"
+	fileName := "./files/src_test1.txt"
 	var processor textprocessor.Processor
 
 	processor.ProcessTxt(fileName)

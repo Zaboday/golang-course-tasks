@@ -3,18 +3,27 @@ package textprocessor
 import (
 	"bufio"
 	"fmt"
+	"io"
 	"os"
 	"sort"
 	"strings"
 	"unicode"
 )
 
-type Processor struct {
+type TextProcessor struct {
+	file      io.Reader
+	stopWords map[string]bool
 }
 
-func (p *Processor) ProcessTxt(fileNameTxt string) {
+func New(reader io.Reader) *TextProcessor {
+	return &TextProcessor{
+		file:      reader,
+		stopWords: make(map[string]bool),
+	}
+}
+
+func (p *TextProcessor) Process(fileNameTxt string) {
 	result := make(map[string]int)
-	stopWords := make(map[string]int)
 	order := make(map[string]int)
 
 	lines, err := p.getLinesFromFile(fileNameTxt)
@@ -26,14 +35,14 @@ func (p *Processor) ProcessTxt(fileNameTxt string) {
 	for _, line := range lines {
 
 		lineWords := strings.Fields(line)
-		p.fillStopWordsByLine(lineWords, stopWords)
+		p.fillStopWordsByLine(lineWords)
 
 		prevWord := ""
 		for _, word := range lineWords {
 
 			if prevWord != "" && p.isStopWords(prevWord, word) {
-				stopWords[word] = 1
-				stopWords[prevWord] = 1
+				p.stopWords[word] = true
+				p.stopWords[prevWord] = true
 			}
 
 			_, isInResult := result[word]
@@ -52,13 +61,13 @@ func (p *Processor) ProcessTxt(fileNameTxt string) {
 		}
 	}
 
-	for _, v := range p.getTop(result, order, stopWords, 10) {
+	for _, v := range p.getTop(result, order, 10) {
 		fmt.Println(v)
 	}
 }
 
 // Determines whether two words are end and begin of sentence.
-func (p *Processor) isStopWords(prevWord string, currWord string) bool {
+func (p *TextProcessor) isStopWords(prevWord string, currWord string) bool {
 	if prevWord == "" || currWord == "" {
 		return false
 	}
@@ -73,26 +82,30 @@ func (p *Processor) isStopWords(prevWord string, currWord string) bool {
 	return false
 }
 
+func (p *TextProcessor) setStopWords(stopWords map[string]bool) {
+	p.stopWords = stopWords
+}
+
 // Determines stopWords in line and adds to map.
-func (p *Processor) fillStopWordsByLine(line []string, stopWords map[string]int) {
+func (p *TextProcessor) fillStopWordsByLine(line []string) {
 	if len(line) == 0 {
 		return
 	}
 
 	if p.isValidWord(line[0]) {
-		stopWords[line[0]] = 1
+		p.stopWords[line[0]] = true
 	}
 
 	if p.isValidWord(line[len(line)-1]) {
-		stopWords[line[len(line)-1]] = 1
+		p.stopWords[line[len(line)-1]] = true
 	}
 }
 
-func (p *Processor) isValidWord(word string) bool {
+func (p *TextProcessor) isValidWord(word string) bool {
 	return len(word) > 3
 }
 
-func (p *Processor) getLinesFromFile(path string) ([]string, error) {
+func (p *TextProcessor) getLinesFromFile(path string) ([]string, error) {
 
 	file, err := os.Open(path)
 	if err != nil {
@@ -100,13 +113,10 @@ func (p *Processor) getLinesFromFile(path string) ([]string, error) {
 	}
 
 	defer file.Close()
-
 	sc := bufio.NewScanner(file)
-
 	sc.Split(bufio.ScanLines)
 
 	var lines []string
-
 	for sc.Scan() {
 		lines = append(lines, sc.Text())
 	}
@@ -114,7 +124,7 @@ func (p *Processor) getLinesFromFile(path string) ([]string, error) {
 	return lines, nil
 }
 
-func (p *Processor) getTop(words map[string]int, order map[string]int, stopWords map[string]int, topSize int) []string {
+func (p *TextProcessor) getTop(words map[string]int, order map[string]int, topSize int) []string {
 	type kv struct {
 		Key   string
 		Value int
@@ -122,7 +132,7 @@ func (p *Processor) getTop(words map[string]int, order map[string]int, stopWords
 
 	s := make([]kv, len(words), len(words))
 	for k, v := range words {
-		_, isStopWord := stopWords[k]
+		_, isStopWord := p.stopWords[k]
 		if !isStopWord {
 			s = append(s, kv{k, v})
 		}
@@ -140,7 +150,9 @@ func (p *Processor) getTop(words map[string]int, order map[string]int, stopWords
 	for i, kv := range s {
 		if i < topSize {
 			//result = append(result, fmt.Sprintf("%d. %s: %d [entrance:  %d]\n", i+1, kv.Key, kv.Value, order[kv.Key]))
-			result[i] = fmt.Sprintf("%d. %s: %d", i+1, kv.Key, kv.Value)
+			if kv.Key != "" {
+				result[i] = fmt.Sprintf("%s: %d", kv.Key, kv.Value)
+			}
 		}
 	}
 
