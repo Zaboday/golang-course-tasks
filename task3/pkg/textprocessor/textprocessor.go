@@ -51,7 +51,10 @@ func (p *Processor) ProcessTxt(fileNameTxt string) {
 			i++
 		}
 	}
-	p.showTop(result, order, stopWords, 10)
+
+	for _, v := range p.getTop(result, order, stopWords, 10) {
+		fmt.Println(v)
+	}
 }
 
 // Determines whether two words are end and begin of sentence.
@@ -111,7 +114,7 @@ func (p *Processor) getLinesFromFile(path string) ([]string, error) {
 	return lines, nil
 }
 
-func (p *Processor) showTop(words map[string]int, order map[string]int, stopWords map[string]int, topSize int) {
+func (p *Processor) getTop(words map[string]int, order map[string]int, stopWords map[string]int, topSize int) []string {
 	type kv struct {
 		Key   string
 		Value int
@@ -133,9 +136,13 @@ func (p *Processor) showTop(words map[string]int, order map[string]int, stopWord
 		return a > b
 	})
 
+	result := make([]string, topSize, topSize)
 	for i, kv := range s {
 		if i < topSize {
-			fmt.Printf("%d. %s: %d [entrance:  %d]\n", i+1, kv.Key, kv.Value, order[kv.Key])
+			//result = append(result, fmt.Sprintf("%d. %s: %d [entrance:  %d]\n", i+1, kv.Key, kv.Value, order[kv.Key]))
+			result[i] = fmt.Sprintf("%d. %s: %d", i+1, kv.Key, kv.Value)
 		}
 	}
+
+	return result
 }
