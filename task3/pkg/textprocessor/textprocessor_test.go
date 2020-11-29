@@ -1,13 +1,37 @@
 package textprocessor
 
 import (
+	"bufio"
+	"os"
 	"strings"
 	"testing"
 )
 
+type TestSortedMap struct {
+	items     map[string]int
+	order     map[string]int
+	stopItems map[string]bool
+}
+
+func (s *TestSortedMap) AddItem(item string) {
+	if _, isInMap := s.items[item]; isInMap == true {
+		s.items[item]++
+		return
+	}
+	s.items[item] = 1
+}
+
+func (s *TestSortedMap) AddStopItem(item string) {
+	s.stopItems[item] = true
+}
+
+func (s *TestSortedMap) AddOrder(item string, n int) {
+	s.order[item] = n
+}
+
 // go test ./pkg/textprocessor
-func TestIsStopWords(t *testing.T) {
-	useCases := []struct {
+func TestTextProcessor_isStopWords(t *testing.T) {
+	cases := []struct {
 		prevWord string
 		nextWord string
 		expected bool
@@ -18,10 +42,10 @@ func TestIsStopWords(t *testing.T) {
 		{"foo", ".Bar", false},
 		{"Foo", ".Bar", false},
 		{".", "B", true},
-		{"", "Bar", false}, //6
+		{"", "Bar", false},
 	}
 
-	for i, c := range useCases {
+	for i, c := range cases {
 		var p TextProcessor
 		if p.isStopWords(c.prevWord, c.nextWord) != c.expected {
 			t.Errorf("Usecase [%d]. expected %v", i, c.expected)
@@ -29,8 +53,8 @@ func TestIsStopWords(t *testing.T) {
 	}
 }
 
-func TestIsValidWord(t *testing.T) {
-	useCases := []struct {
+func TestTextProcessor_isValidWord(t *testing.T) {
+	cases := []struct {
 		word     string
 		expected bool
 	}{
@@ -39,81 +63,89 @@ func TestIsValidWord(t *testing.T) {
 		{",  ", false},
 		{",   ", true},
 		{"asdasdasda asdasd asdaddas", true},
-		{"a", false}, //5
+		{"a", false},
 		{"as", false},
 		{"asdads", true},
 		{"1", false},
 		{"1%", false},
 		{"11`", false},
 		{"11.", false},
-		{"111.", true}, //12
+		{"111.", true},
 	}
 
-	for i, c := range useCases {
+	for i, c := range cases {
 		var p TextProcessor
+		p.wordLength = 3
 		if p.isValidWord(c.word) != c.expected {
 			t.Errorf("Usecase [%d]. expected %v", i, c.expected)
 		}
 	}
 }
 
-func TestFillStopWordsByLine(t *testing.T) {
-	useCases := []struct {
+func TestTextProcessor_fillStopWordsByLine(t *testing.T) {
+	cases := []struct {
 		line     string
 		expected map[string]bool
 	}{
 		{"some line", map[string]bool{"some": true, "line": true}},
+		{"StaRt Ende", map[string]bool{"start": true, "ende": true}},
+		{"StaRt End.", map[string]bool{"start": true}},
 		{"foo bar", map[string]bool{}},
 		{"start, foo bar was beautiful barend1", map[string]bool{"start,": true, "barend1": true}},
 		{" ", map[string]bool{}},
 		{"                            ", map[string]bool{}},
-		{".,.,.         \n            ../,", map[string]bool{".,.,.": true, "../,": true}},
+		{".,.,.         \n            ../,", map[string]bool{".,.,": true, "../,": true}},
 	}
 
-	for i, c := range useCases {
-		var p TextProcessor
+	for i, c := range cases {
+		sm := TestSortedMap{map[string]int{}, map[string]int{}, map[string]bool{}}
+		var p = New(&sm)
+		p.wordLength = 3
 		ss := strings.Fields(c.line)
-		p.setStopWords(make(map[string]bool))
 		p.fillStopWordsByLine(ss)
 
-		if !isEqualStopWords(p.stopWords, c.expected) {
-			t.Errorf("Usecase [%d]. expected %v, actual %v", i, c.expected, p.stopWords)
+		if !isEqualStopWords(sm.stopItems, c.expected) {
+			t.Errorf("Usecase [%d]. expected %v, actual %v", i, c.expected, sm.stopItems)
 		}
 	}
 }
 
-/*func TestGetTop(t *testing.T) {
-	words := map[string]int{"f": 1, "b": 2, "h": 2, "d": 5}
-	order := map[string]int{"h": 1, "b": 2}
-	emptyOrder := make(map[string]bool)
-
-	useCases := []struct {
-		words     map[string]int
-		order     map[string]int
-		stopWords map[string]bool
-		topSize   int
-		expected  []string
+func TestTextProcessor_clearWord(t *testing.T) {
+	cases := []struct {
+		actual   string
+		expected string
 	}{
-		{words, make(map[string]int), emptyOrder, 1, []string{"d: 5"}},
-		{words, order, emptyOrder, 2, []string{"d: 5", "h: 2"}},
-		{words, order, emptyOrder, 3, []string{"d: 5", "h: 2", "b: 2"}},
-		{words, make(map[string]int), map[string]bool{"b": true}, 3, []string{"d: 5", "h: 2", "f: 1"}},
-		{words, make(map[string]int), map[string]bool{"b": true, "d": true}, 3, []string{"h: 2", "f: 1", ""}},
-		{words, map[string]int{"b": 1, "h": 2}, map[string]bool{"d": true}, 5, []string{"b: 2", "h: 2", "f: 1", "", ""}},
+		{"Foo", "foo"},
+		{"FOo", "foo"},
+		{"FOO.", "foo"},
+		{".FOO", ".foo"},
+		{".....FOO", ".....foo"},
+		{"Foo..", "foo."},
 	}
 
-	for i, c := range useCases {
+	for i, c := range cases {
 		var p TextProcessor
-		p.setStopWords(c.stopWords)
-		top := p.getTop(c.words, c.order, c.topSize)
-
-		if !isEqualSlices(c.expected, top) {
-			t.Errorf("Usecase [%d]. expected %v, actual %v", i, c.expected, top)
+		if p.clearWord(c.actual) != c.expected {
+			t.Errorf("Usecase [%d]. clearWord() expected %v, actual %v", i, c.expected, c.actual)
 		}
 	}
-}*/
+}
 
-// go test -bench=. -benchmem ./pkg/slicer
+// go test -bench=. -benchmem ./pkg/textprocessor
+
+func BenchmarkTextProcessor_ProcessLine(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		b.StopTimer()
+		sm := TestSortedMap{make(map[string]int), make(map[string]int), make(map[string]bool)}
+		var p = New(&sm)
+		file, _ := os.Open("files/src_test.txt")
+		sc := bufio.NewScanner(file)
+		b.StartTimer()
+		for sc.Scan() {
+			p.ProcessLine(sc.Text())
+		}
+	}
+}
 
 // Return true if two maps have same length and same key->values
 func isEqualStopWords(a map[string]bool, b map[string]bool) bool {
@@ -128,18 +160,5 @@ func isEqualStopWords(a map[string]bool, b map[string]bool) bool {
 		}
 	}
 
-	return true
-}
-
-// Return true if two slices have same length and same index->values
-func isEqualSlices(a []string, b []string) bool {
-	if len(a) != len(b) {
-		return false
-	}
-	for i, v := range a {
-		if v != b[i] {
-			return false
-		}
-	}
 	return true
 }

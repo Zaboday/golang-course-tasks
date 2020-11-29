@@ -1,79 +1,79 @@
 package textprocessor
 
 import (
-	"bufio"
 	"fmt"
-	"io"
-	"os"
-	"sort"
+	"regexp"
 	"strings"
 	"unicode"
 )
 
 type TextProcessor struct {
-	file      io.Reader
-	stopWords map[string]bool
+	sortedMap  SortedWordsMap
+	counter    int
+	wordLength int
+	regexp     *regexp.Regexp
 }
 
-func New(reader io.Reader) *TextProcessor {
-	return &TextProcessor{
-		file:      reader,
-		stopWords: make(map[string]bool),
-	}
+type SortedWordsMap interface {
+	AddItem(item string)
+	AddStopItem(item string)
+	AddOrder(item string, n int)
 }
 
-func (p *TextProcessor) Process(fileNameTxt string) {
-	result := make(map[string]int)
-	order := make(map[string]int)
-
-	lines, err := p.getLinesFromFile(fileNameTxt)
+func New(sm SortedWordsMap) *TextProcessor {
+	r, err := regexp.Compile(`[^a-zA-Z0-9\.\s]`)
 	if err != nil {
-		panic(err)
+		panic(fmt.Sprintf("Regexp compilation error: %s", err))
 	}
 
-	i := 0
-	for _, line := range lines {
-
-		lineWords := strings.Fields(line)
-		p.fillStopWordsByLine(lineWords)
-
-		prevWord := ""
-		for _, word := range lineWords {
-
-			if prevWord != "" && p.isStopWords(prevWord, word) {
-				p.stopWords[word] = true
-				p.stopWords[prevWord] = true
-			}
-
-			_, isInResult := result[word]
-			if isInResult {
-				result[word]++
-				continue
-			}
-
-			if p.isValidWord(word) {
-				order[word] = i
-				result[word] = 1
-			}
-
-			prevWord = word
-			i++
-		}
-	}
-
-	for _, v := range p.getTop(result, order, 10) {
-		fmt.Println(v)
+	return &TextProcessor{
+		sortedMap:  sm,
+		wordLength: 3,
+		regexp:     r,
 	}
 }
 
-// Determines whether two words are end and begin of sentence.
-func (p *TextProcessor) isStopWords(prevWord string, currWord string) bool {
-	if prevWord == "" || currWord == "" {
+func (p *TextProcessor) SetWordLength(len int) {
+	p.wordLength = len
+}
+
+func (p *TextProcessor) ProcessLine(line string) {
+	if line == "" {
+		return
+	}
+
+	line = p.regexp.ReplaceAllString(line, "")
+	words := strings.Fields(line)
+	p.fillStopWordsByLine(words)
+
+	prevWordOrigin := ""
+	for _, word := range words {
+
+		if p.isStopWords(prevWordOrigin, word) {
+			p.sortedMap.AddStopItem(p.clearWord(word))
+			p.sortedMap.AddStopItem(p.clearWord(prevWordOrigin))
+			continue
+		}
+
+		prevWordOrigin = word
+		word = p.clearWord(word)
+		if p.isValidWord(word) {
+			p.sortedMap.AddItem(word)
+			p.sortedMap.AddOrder(word, p.counter)
+		}
+
+		p.counter++
+	}
+}
+
+// Determines two words are begin and end of sentence.
+func (p *TextProcessor) isStopWords(prevWord string, nextWord string) bool {
+	if prevWord == "" || nextWord == "" {
 		return false
 	}
-
+	// 46 is "."
 	if prevWord[len(prevWord)-1] == 46 {
-		r := []rune(currWord)
+		r := []rune(nextWord)
 		if unicode.IsUpper(r[0]) {
 			return true
 		}
@@ -82,79 +82,38 @@ func (p *TextProcessor) isStopWords(prevWord string, currWord string) bool {
 	return false
 }
 
-func (p *TextProcessor) setStopWords(stopWords map[string]bool) {
-	p.stopWords = stopWords
+// Determines valid word.
+func (p *TextProcessor) isValidWord(word string) bool {
+	return len(word) > p.wordLength
 }
 
-// Determines stopWords in line and adds to map.
+// Determines stop-words in line. First and last words of line are stop-words.
 func (p *TextProcessor) fillStopWordsByLine(line []string) {
 	if len(line) == 0 {
 		return
 	}
 
-	if p.isValidWord(line[0]) {
-		p.stopWords[line[0]] = true
+	firstWord := p.clearWord(line[0])
+	if p.isValidWord(firstWord) {
+		p.sortedMap.AddStopItem(strings.ToLower(firstWord))
 	}
 
-	if p.isValidWord(line[len(line)-1]) {
-		p.stopWords[line[len(line)-1]] = true
+	lastWord := p.clearWord(line[len(line)-1])
+	if p.isValidWord(lastWord) {
+		p.sortedMap.AddStopItem(strings.ToLower(lastWord))
 	}
 }
 
-func (p *TextProcessor) isValidWord(word string) bool {
-	return len(word) > 3
-}
-
-func (p *TextProcessor) getLinesFromFile(path string) ([]string, error) {
-
-	file, err := os.Open(path)
-	if err != nil {
-		return nil, err
+// Removes "." from the end of word
+func (p *TextProcessor) clearWord(word string) string {
+	if word == "" {
+		return word
 	}
-
-	defer file.Close()
-	sc := bufio.NewScanner(file)
-	sc.Split(bufio.ScanLines)
-
-	var lines []string
-	for sc.Scan() {
-		lines = append(lines, sc.Text())
+	word = strings.ToLower(word)
+	// 46 is "."
+	if word[len(word)-1] == 46 {
+		r := []rune(word)
+		return string(r[0 : len(r)-1])
 	}
-
-	return lines, nil
-}
-
-func (p *TextProcessor) getTop(words map[string]int, order map[string]int, topSize int) []string {
-	type kv struct {
-		Key   string
-		Value int
-	}
-
-	s := make([]kv, len(words), len(words))
-	for k, v := range words {
-		_, isStopWord := p.stopWords[k]
-		if !isStopWord {
-			s = append(s, kv{k, v})
-		}
-	}
-
-	sort.Slice(s, func(i, j int) bool {
-		// Сортируем в соответствии с позицией первого вхождения.
-		a := s[i].Value*10000 + (1000 - order[s[i].Key])
-		b := s[j].Value*10000 + (1000 - order[s[j].Key])
-
-		return a > b
-	})
-
-	result := make([]string, topSize, topSize)
-	for i, kv := range s {
-		if i < topSize {
-			//result = append(result, fmt.Sprintf("%d. %s: %d [entrance:  %d]\n", i+1, kv.Key, kv.Value, order[kv.Key]))
-			if kv.Key != "" {
-				result[i] = fmt.Sprintf("%s: %d", kv.Key, kv.Value)
-			}
-		}
-	}
-
-	return result
+	return word
 }
