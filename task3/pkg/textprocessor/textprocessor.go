@@ -3,7 +3,6 @@ package textprocessor
 import (
 	"regexp"
 	"strings"
-	"sync"
 	"unicode"
 )
 
@@ -11,7 +10,6 @@ type TextProcessor struct {
 	sortedMap  SortedWordsMap
 	wordLength int
 	regexp     *regexp.Regexp
-	mu         sync.Mutex
 }
 
 const POINT = 46
@@ -44,6 +42,7 @@ func (p *TextProcessor) ProcessLine(line string, lineNumber int) {
 	prevWordOrigin := ""
 
 	i := 0
+
 	for _, word := range words {
 		if p.isStopWords(prevWordOrigin, word) {
 			p.sortedMap.AddStopItem(p.clearWord(word))

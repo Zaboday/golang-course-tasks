@@ -1,6 +1,9 @@
 package sortedmap
 
-import "testing"
+import (
+	"sync"
+	"testing"
+)
 
 // go test ./pkg/sortedmap
 
@@ -102,11 +105,15 @@ func TestSortedMap_Top(t *testing.T) {
 		{items, order, emptyOrder, 3, []string{"d: 5", "h: 2", "b: 2"}},
 		{items, make(map[string][2]int), map[string]bool{"b": true}, 3, []string{"d: 5", "h: 2", "f: 1"}},
 		{items, make(map[string][2]int), map[string]bool{"b": true, "d": true}, 3, []string{"h: 2", "f: 1", ""}},
-		{items, map[string][2]int{"b": {1, 2}, "h": {2, 1}}, map[string]bool{"d": true}, 5, []string{"f: 1", "", "", "b: 2", "h: 2"}},
+		{items,
+			map[string][2]int{"b": {1, 2}, "h": {2, 1}},
+			map[string]bool{"d": true}, 5,
+			[]string{"f: 1", "", "", "b: 2", "h: 2"},
+		},
 	}
 
 	for i, c := range cases {
-		sm := SortedMap{c.items, c.order, c.stopItems}
+		sm := SortedMap{c.items, c.order, c.stopItems, new(sync.Mutex)}
 		top := sm.Top(c.topSize)
 
 		if !isEqualSlices(c.expected, top) {

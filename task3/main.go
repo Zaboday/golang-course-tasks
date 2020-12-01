@@ -33,19 +33,20 @@ func main() {
 	defer file.Close()
 
 	wg := new(sync.WaitGroup)
-	mu := new(sync.Mutex)
-
 	sc := bufio.NewScanner(file)
 	i := 0
+
 	for sc.Scan() {
-		wg.Add(1)
 		i++
+
+		line := sc.Text()
+
+		wg.Add(1)
+
 		go func(i int) {
 			defer wg.Done()
-			mu.Lock()
-			p.ProcessLine(sc.Text(), i)
-			mu.Unlock()
-			fmt.Println(i)
+
+			p.ProcessLine(line, i)
 		}(i)
 	}
 	wg.Wait()
