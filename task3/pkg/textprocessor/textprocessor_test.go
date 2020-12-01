@@ -13,12 +13,14 @@ type TestSortedMap struct {
 	stopItems map[string]bool
 }
 
-func (s *TestSortedMap) AddItem(item string) {
+func (s *TestSortedMap) AddItem(item string) int {
 	if _, isInMap := s.items[item]; isInMap == true {
 		s.items[item]++
-		return
 	}
+
 	s.items[item] = 1
+
+	return s.items[item]
 }
 
 func (s *TestSortedMap) AddStopItem(item string) {
@@ -27,6 +29,19 @@ func (s *TestSortedMap) AddStopItem(item string) {
 
 func (s *TestSortedMap) AddOrder(item string, n int) {
 	s.order[item] = n
+}
+
+type MockSortedMap struct {
+}
+
+func (s *MockSortedMap) AddItem(item string) int {
+	return 1
+}
+
+func (s *MockSortedMap) AddStopItem(item string) {
+}
+
+func (s *MockSortedMap) AddOrder(item string, n int) {
 }
 
 // go test ./pkg/textprocessor
@@ -76,6 +91,7 @@ func TestTextProcessor_isValidWord(t *testing.T) {
 	for i, c := range cases {
 		var p TextProcessor
 		p.wordLength = 3
+
 		if p.isValidWord(c.word) != c.expected {
 			t.Errorf("Usecase [%d]. expected %v", i, c.expected)
 		}
@@ -99,9 +115,10 @@ func TestTextProcessor_fillStopWordsByLine(t *testing.T) {
 
 	for i, c := range cases {
 		sm := TestSortedMap{map[string]int{}, map[string]int{}, map[string]bool{}}
-		var p = New(&sm)
-		p.wordLength = 3
 		ss := strings.Fields(c.line)
+
+		var p = New(&sm, 3)
+
 		p.fillStopWordsByLine(ss)
 
 		if !isEqualStopWords(sm.stopItems, c.expected) {
@@ -134,13 +151,18 @@ func TestTextProcessor_clearWord(t *testing.T) {
 // go test -bench=. -benchmem ./pkg/textprocessor
 
 func BenchmarkTextProcessor_ProcessLine(b *testing.B) {
+	sm := MockSortedMap{}
+
 	for i := 0; i < b.N; i++ {
 		b.StopTimer()
-		sm := TestSortedMap{make(map[string]int), make(map[string]int), make(map[string]bool)}
-		var p = New(&sm)
+
+		var p = New(&sm, 3)
+
 		file, _ := os.Open("files/src_test.txt")
 		sc := bufio.NewScanner(file)
+
 		b.StartTimer()
+
 		for sc.Scan() {
 			p.ProcessLine(sc.Text())
 		}

@@ -19,12 +19,15 @@ func New() *SortedMap {
 	}
 }
 
-func (s *SortedMap) AddItem(item string) {
-	if _, isInMap := s.items[item]; isInMap == true {
+func (s *SortedMap) AddItem(item string) int {
+	_, ok := s.items[item]
+	if ok {
 		s.items[item]++
-		return
+	} else {
+		s.items[item] = 1
 	}
-	s.items[item] = 1
+
+	return s.items[item]
 }
 
 func (s *SortedMap) AddStopItem(item string) {
@@ -41,25 +44,28 @@ func (s *SortedMap) Top(size int) []string {
 		val int
 	}
 
-	temp := make([]kv, len(s.items), len(s.items))
+	temp := make([]kv, len(s.items))
+
 	for k, v := range s.items {
-		_, isStopWord := s.stopItems[k]
-		if !isStopWord {
+		if _, ok := s.stopItems[k]; !ok {
 			temp = append(temp, kv{k, v})
 		}
 	}
 
 	sort.Slice(temp, func(i, j int) bool {
-		a := temp[i].val*10000 + (1000 - s.order[temp[i].key])
-		b := temp[j].val*10000 + (1000 - s.order[temp[j].key])
-
-		return a > b
+		return temp[i].val > temp[j].val
 	})
 
-	result := make([]string, size, size)
+	temp = temp[0:size]
+
+	sort.Slice(temp, func(i, j int) bool {
+		return s.order[temp[j].key] > s.order[temp[i].key]
+	})
+
+	result := make([]string, size)
+
 	for i, kv := range temp {
 		if i < size {
-			//result = append(result, fmt.Sprintf("%d. %temp: %d [entrance:  %d]\n", i+1, kv.key, kv.val, order[kv.key]))
 			if kv.key != "" {
 				result[i] = fmt.Sprintf("%s: %d", kv.key, kv.val)
 			}

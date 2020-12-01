@@ -11,7 +11,10 @@ import (
 
 func main() {
 	var fileName string
-	var wordLength, topSize int
+
+	var wordLength int
+
+	var topSize int
 
 	flag.StringVar(&fileName, "f", "files/src.txt", "file path with text")
 	flag.IntVar(&wordLength, "wl", 3, "word length")
@@ -19,8 +22,7 @@ func main() {
 	flag.Parse()
 
 	var sm = sortedmap.New()
-	var p = textprocessor.New(sm)
-	p.SetWordLength(wordLength)
+	p := textprocessor.New(sm, wordLength)
 
 	file, err := os.Open(fileName)
 	if err != nil {

@@ -15,9 +15,11 @@ func TestSortedMap_AddItem(t *testing.T) {
 
 	for i, c := range cases {
 		var sm = New()
+
 		for _, item := range c.items {
 			sm.AddItem(item)
 		}
+
 		if !isEqualMaps(sm.items, c.expected) {
 			t.Errorf("Usecase [%d]. AddItem(): expected %v, actual %v", i, c.expected, sm.items)
 		}
@@ -35,17 +37,21 @@ func TestSortedMap_AddOrder(t *testing.T) {
 
 	for i, c := range cases {
 		var sm = New()
+
 		for item, n := range c.items {
 			sm.AddOrder(item, n)
 		}
+
 		if !isEqualMaps(sm.order, c.expected) {
 			t.Errorf("Usecase [%d]. AddOrder(): expected %v, actual %v", i, c.expected, sm.order)
 		}
 	}
 
 	var sm = New()
+
 	for i, n := range []int{1, 2, 3, 10, 20, 1, 3} {
 		sm.AddOrder("foo", n)
+
 		if sm.order["foo"] != n {
 			t.Errorf("Usecase [%d]. AddOrder() same value: expected %d, actual %d", i, n, sm.order["foo"])
 		}
@@ -65,10 +71,12 @@ func TestSortedMap_AddStopItem(t *testing.T) {
 
 	for i, c := range cases {
 		var sm = New()
+
 		for _, item := range c.items {
 			sm.AddStopItem(item)
 			sm.AddStopItem(item)
 		}
+
 		if !isEqualMapsBool(sm.stopItems, c.expected) {
 			t.Errorf("Usecase [%d]. AddStopItem(): expected %v, actual %v", i, c.expected, sm.items)
 		}
@@ -140,10 +148,12 @@ func isEqualSlices(a []string, b []string) bool {
 	if len(a) != len(b) {
 		return false
 	}
+
 	for i, v := range a {
 		if v != b[i] {
 			return false
 		}
 	}
+
 	return true
 }

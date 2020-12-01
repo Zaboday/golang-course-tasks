@@ -1,7 +1,6 @@
 package textprocessor
 
 import (
-	"fmt"
 	"regexp"
 	"strings"
 	"unicode"
@@ -14,27 +13,22 @@ type TextProcessor struct {
 	regexp     *regexp.Regexp
 }
 
+const POINT = 46
+
 type SortedWordsMap interface {
-	AddItem(item string)
+	AddItem(item string) int
 	AddStopItem(item string)
 	AddOrder(item string, n int)
 }
 
-func New(sm SortedWordsMap) *TextProcessor {
-	r, err := regexp.Compile(`[^a-zA-Z0-9\.\s]`)
-	if err != nil {
-		panic(fmt.Sprintf("Regexp compilation error: %s", err))
-	}
+func New(sm SortedWordsMap, l int) *TextProcessor {
+	r := regexp.MustCompile(`[^a-zA-Z0-9\.\s]`)
 
 	return &TextProcessor{
 		sortedMap:  sm,
-		wordLength: 3,
+		wordLength: l,
 		regexp:     r,
 	}
-}
-
-func (p *TextProcessor) SetWordLength(len int) {
-	p.wordLength = len
 }
 
 func (p *TextProcessor) ProcessLine(line string) {
@@ -47,22 +41,21 @@ func (p *TextProcessor) ProcessLine(line string) {
 	p.fillStopWordsByLine(words)
 
 	prevWordOrigin := ""
-	for _, word := range words {
 
+	for _, word := range words {
 		if p.isStopWords(prevWordOrigin, word) {
 			p.sortedMap.AddStopItem(p.clearWord(word))
 			p.sortedMap.AddStopItem(p.clearWord(prevWordOrigin))
-			continue
+		} else {
+			prevWordOrigin = word
+			word = p.clearWord(word)
+			if p.isValidWord(word) {
+				if p.sortedMap.AddItem(word) == 1 {
+					p.sortedMap.AddOrder(word, p.counter)
+					p.counter++
+				}
+			}
 		}
-
-		prevWordOrigin = word
-		word = p.clearWord(word)
-		if p.isValidWord(word) {
-			p.sortedMap.AddItem(word)
-			p.sortedMap.AddOrder(word, p.counter)
-		}
-
-		p.counter++
 	}
 }
 
@@ -71,8 +64,8 @@ func (p *TextProcessor) isStopWords(prevWord string, nextWord string) bool {
 	if prevWord == "" || nextWord == "" {
 		return false
 	}
-	// 46 is "."
-	if prevWord[len(prevWord)-1] == 46 {
+
+	if prevWord[len(prevWord)-1] == POINT {
 		r := []rune(nextWord)
 		if unicode.IsUpper(r[0]) {
 			return true
@@ -94,6 +87,7 @@ func (p *TextProcessor) fillStopWordsByLine(line []string) {
 	}
 
 	firstWord := p.clearWord(line[0])
+
 	if p.isValidWord(firstWord) {
 		p.sortedMap.AddStopItem(strings.ToLower(firstWord))
 	}
@@ -109,11 +103,13 @@ func (p *TextProcessor) clearWord(word string) string {
 	if word == "" {
 		return word
 	}
+
 	word = strings.ToLower(word)
-	// 46 is "."
-	if word[len(word)-1] == 46 {
+
+	if word[len(word)-1] == POINT {
 		r := []rune(word)
 		return string(r[0 : len(r)-1])
 	}
+
 	return word
 }
