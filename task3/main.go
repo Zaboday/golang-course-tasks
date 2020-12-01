@@ -7,6 +7,7 @@ import (
 	"main/pkg/sortedmap"
 	"main/pkg/textprocessor"
 	"os"
+	"sync"
 )
 
 func main() {
@@ -31,12 +32,23 @@ func main() {
 	}
 	defer file.Close()
 
+	wg := new(sync.WaitGroup)
+	mu := new(sync.Mutex)
+
 	sc := bufio.NewScanner(file)
 	i := 0
 	for sc.Scan() {
-		p.ProcessLine(sc.Text(), i)
+		wg.Add(1)
 		i++
+		go func(i int) {
+			defer wg.Done()
+			mu.Lock()
+			p.ProcessLine(sc.Text(), i)
+			mu.Unlock()
+			fmt.Println(i)
+		}(i)
 	}
+	wg.Wait()
 
 	for _, v := range sm.Top(topSize) {
 		fmt.Println(v)
