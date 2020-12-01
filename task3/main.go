@@ -32,8 +32,10 @@ func main() {
 	defer file.Close()
 
 	sc := bufio.NewScanner(file)
+	i := 0
 	for sc.Scan() {
-		p.ProcessLine(sc.Text())
+		p.ProcessLine(sc.Text(), i)
+		i++
 	}
 
 	for _, v := range sm.Top(topSize) {

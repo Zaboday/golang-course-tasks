@@ -9,7 +9,7 @@ import (
 
 type TestSortedMap struct {
 	items     map[string]int
-	order     map[string]int
+	orderLine map[string][2]int
 	stopItems map[string]bool
 }
 
@@ -27,8 +27,8 @@ func (s *TestSortedMap) AddStopItem(item string) {
 	s.stopItems[item] = true
 }
 
-func (s *TestSortedMap) AddOrder(item string, n int) {
-	s.order[item] = n
+func (s *TestSortedMap) AddLineOrder(item string, lineNumber int, linePosition int) {
+	s.orderLine[item] = [2]int{lineNumber, linePosition}
 }
 
 type MockSortedMap struct {
@@ -41,7 +41,7 @@ func (s *MockSortedMap) AddItem(item string) int {
 func (s *MockSortedMap) AddStopItem(item string) {
 }
 
-func (s *MockSortedMap) AddOrder(item string, n int) {
+func (s *MockSortedMap) AddLineOrder(item string, lineNumber int, linePosition int) {
 }
 
 // go test ./pkg/textprocessor
@@ -114,7 +114,7 @@ func TestTextProcessor_fillStopWordsByLine(t *testing.T) {
 	}
 
 	for i, c := range cases {
-		sm := TestSortedMap{map[string]int{}, map[string]int{}, map[string]bool{}}
+		sm := TestSortedMap{map[string]int{}, map[string][2]int{}, map[string]bool{}}
 		ss := strings.Fields(c.line)
 
 		var p = New(&sm, 3)
@@ -164,7 +164,7 @@ func BenchmarkTextProcessor_ProcessLine(b *testing.B) {
 		b.StartTimer()
 
 		for sc.Scan() {
-			p.ProcessLine(sc.Text())
+			p.ProcessLine(sc.Text(), 1)
 		}
 	}
 }

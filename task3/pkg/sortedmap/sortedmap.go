@@ -7,14 +7,14 @@ import (
 
 type SortedMap struct {
 	items     map[string]int
-	order     map[string]int
+	lineOrder map[string][2]int
 	stopItems map[string]bool
 }
 
 func New() *SortedMap {
 	return &SortedMap{
 		items:     make(map[string]int),
-		order:     make(map[string]int),
+		lineOrder: make(map[string][2]int),
 		stopItems: make(map[string]bool),
 	}
 }
@@ -34,8 +34,17 @@ func (s *SortedMap) AddStopItem(item string) {
 	s.stopItems[item] = true
 }
 
-func (s *SortedMap) AddOrder(item string, n int) {
-	s.order[item] = n
+func (s *SortedMap) AddLineOrder(item string, lineNumber int, positionInLine int) {
+	if o, ok := s.lineOrder[item]; ok {
+		if lineNumber <= o[0] {
+			if positionInLine < o[1] {
+				s.lineOrder[item] = [2]int{lineNumber, positionInLine}
+				return
+			}
+		}
+	} else {
+		s.lineOrder[item] = [2]int{lineNumber, positionInLine}
+	}
 }
 
 func (s *SortedMap) Top(size int) []string {
@@ -59,7 +68,15 @@ func (s *SortedMap) Top(size int) []string {
 	temp = temp[0:size]
 
 	sort.Slice(temp, func(i, j int) bool {
-		return s.order[temp[j].key] > s.order[temp[i].key]
+		if s.lineOrder[temp[j].key][0] > s.lineOrder[temp[i].key][0] {
+			return true
+		} else if s.lineOrder[temp[j].key][0] == s.lineOrder[temp[i].key][0] {
+			if s.lineOrder[temp[j].key][1] > s.lineOrder[temp[i].key][1] {
+				return true
+			}
+		}
+
+		return false
 	})
 
 	result := make([]string, size)

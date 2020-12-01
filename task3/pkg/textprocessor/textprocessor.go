@@ -3,14 +3,15 @@ package textprocessor
 import (
 	"regexp"
 	"strings"
+	"sync"
 	"unicode"
 )
 
 type TextProcessor struct {
 	sortedMap  SortedWordsMap
-	counter    int
 	wordLength int
 	regexp     *regexp.Regexp
+	mu         sync.Mutex
 }
 
 const POINT = 46
@@ -18,7 +19,7 @@ const POINT = 46
 type SortedWordsMap interface {
 	AddItem(item string) int
 	AddStopItem(item string)
-	AddOrder(item string, n int)
+	AddLineOrder(item string, l int, n int)
 }
 
 func New(sm SortedWordsMap, l int) *TextProcessor {
@@ -31,7 +32,7 @@ func New(sm SortedWordsMap, l int) *TextProcessor {
 	}
 }
 
-func (p *TextProcessor) ProcessLine(line string) {
+func (p *TextProcessor) ProcessLine(line string, lineNumber int) {
 	if line == "" {
 		return
 	}
@@ -42,6 +43,7 @@ func (p *TextProcessor) ProcessLine(line string) {
 
 	prevWordOrigin := ""
 
+	i := 0
 	for _, word := range words {
 		if p.isStopWords(prevWordOrigin, word) {
 			p.sortedMap.AddStopItem(p.clearWord(word))
@@ -50,12 +52,11 @@ func (p *TextProcessor) ProcessLine(line string) {
 			prevWordOrigin = word
 			word = p.clearWord(word)
 			if p.isValidWord(word) {
-				if p.sortedMap.AddItem(word) == 1 {
-					p.sortedMap.AddOrder(word, p.counter)
-					p.counter++
-				}
+				p.sortedMap.AddItem(word)
+				p.sortedMap.AddLineOrder(word, lineNumber, i)
 			}
 		}
+		i++
 	}
 }
 
