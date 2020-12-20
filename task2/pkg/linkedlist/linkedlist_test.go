@@ -156,13 +156,14 @@ func TestLinkedListGetMinError(t *testing.T) {
 var result int
 var n = 1000
 
-func BenchmarkLinkedListInsert5(b *testing.B)   { benchmarkLinkedListInsert(5, b) }
-func BenchmarkLinkedListInsert50(b *testing.B)  { benchmarkLinkedListInsert(50, b) }
-func BenchmarkLinkedListInsert100(b *testing.B) { benchmarkLinkedListInsert(100, b) }
+func BenchmarkLinkedListInsert5(b *testing.B)            { benchmarkLinkedListInsert(5, b) }
+func BenchmarkLinkedListInsert50(b *testing.B)           { benchmarkLinkedListInsert(50, b) }
+func BenchmarkLinkedListInsert100(b *testing.B)          { benchmarkLinkedListInsert(100, b) }
+func BenchmarkLinkedListInsert100IntoStart(b *testing.B) { benchmarkLinkedListInsertIntoStart(100, b) }
 
-func BenchmarkLinkedListDelete5(b *testing.B)   { benchmarkLinkedListDelete(5, b) }
-func BenchmarkLinkedListDelete50(b *testing.B)  { benchmarkLinkedListDelete(50, b) }
-func BenchmarkLinkedListDelete100(b *testing.B) { benchmarkLinkedListDelete(100, b) }
+func BenchmarkLinkedListDelete100(b *testing.B)   { benchmarkLinkedListDelete(100, b) }
+func BenchmarkLinkedListDelete1000(b *testing.B)  { benchmarkLinkedListDelete(1000, b) }
+func BenchmarkLinkedListDelete10000(b *testing.B) { benchmarkLinkedListDelete(10000, b) }
 
 func benchmarkLinkedListInsert(size int, b *testing.B) {
 	var r int
@@ -177,12 +178,25 @@ func benchmarkLinkedListInsert(size int, b *testing.B) {
 	result = r
 }
 
+func benchmarkLinkedListInsertIntoStart(size int, b *testing.B) {
+	var r int
+	rand.Seed(1)
+	var x = rand.Intn(n)
+
+	for i := b.N; i > 0; i-- {
+		list := makeList(size)
+		r = list.Insert(i + x)
+	}
+
+	result = r
+}
+
 func benchmarkLinkedListDelete(size int, b *testing.B) {
 	var r int
 	rand.Seed(1)
 
+	list := makeList(size)
 	for i := 0; i < b.N; i++ {
-		list := makeList(size)
 		r = list.Delete(i)
 	}
 
