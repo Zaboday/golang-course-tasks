@@ -43,12 +43,17 @@ func main() {
 
 		wg.Add(1)
 
-		go func(i int) {
+		go func(line string, i int) {
 			defer wg.Done()
 
 			p.ProcessLine(line, i)
-		}(i)
+		}(line, i)
 	}
+
+	if err := sc.Err(); err != nil {
+		fmt.Printf("Error [scanner]: %v", sc.Err())
+	}
+
 	wg.Wait()
 
 	for _, v := range sm.Top(topSize) {
