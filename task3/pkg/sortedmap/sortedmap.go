@@ -3,23 +3,29 @@ package sortedmap
 import (
 	"fmt"
 	"sort"
+	"sync"
 )
 
 type SortedMap struct {
 	items     map[string]int
-	order     map[string]int
+	lineOrder map[string][2]int
 	stopItems map[string]bool
+	mutex     *sync.Mutex
 }
 
 func New() *SortedMap {
 	return &SortedMap{
 		items:     make(map[string]int),
-		order:     make(map[string]int),
+		lineOrder: make(map[string][2]int),
 		stopItems: make(map[string]bool),
+		mutex:     new(sync.Mutex),
 	}
 }
 
 func (s *SortedMap) AddItem(item string) int {
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+
 	_, ok := s.items[item]
 	if ok {
 		s.items[item]++
@@ -31,11 +37,25 @@ func (s *SortedMap) AddItem(item string) int {
 }
 
 func (s *SortedMap) AddStopItem(item string) {
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+
 	s.stopItems[item] = true
 }
 
-func (s *SortedMap) AddOrder(item string, n int) {
-	s.order[item] = n
+func (s *SortedMap) AddLineOrder(item string, lineNumber int, positionInLine int) {
+	s.mutex.Lock()
+	defer s.mutex.Unlock()
+
+	if o, ok := s.lineOrder[item]; ok {
+		if lineNumber < o[0] {
+			s.lineOrder[item] = [2]int{lineNumber, positionInLine}
+		} else if lineNumber == o[0] && positionInLine < o[1] {
+			s.lineOrder[item] = [2]int{lineNumber, positionInLine}
+		}
+	} else {
+		s.lineOrder[item] = [2]int{lineNumber, positionInLine}
+	}
 }
 
 func (s *SortedMap) Top(size int) []string {
@@ -59,7 +79,15 @@ func (s *SortedMap) Top(size int) []string {
 	temp = temp[0:size]
 
 	sort.Slice(temp, func(i, j int) bool {
-		return s.order[temp[j].key] > s.order[temp[i].key]
+		if s.lineOrder[temp[j].key][0] > s.lineOrder[temp[i].key][0] {
+			return true
+		} else if s.lineOrder[temp[j].key][0] == s.lineOrder[temp[i].key][0] {
+			if s.lineOrder[temp[j].key][1] > s.lineOrder[temp[i].key][1] {
+				return true
+			}
+		}
+
+		return false
 	})
 
 	result := make([]string, size)

@@ -1,6 +1,11 @@
 package sortedmap
 
-import "testing"
+import (
+	"sync"
+	"testing"
+)
+
+// go test ./pkg/sortedmap
 
 func TestSortedMap_AddItem(t *testing.T) {
 	cases := []struct {
@@ -26,35 +31,35 @@ func TestSortedMap_AddItem(t *testing.T) {
 	}
 }
 
-func TestSortedMap_AddOrder(t *testing.T) {
+func TestSortedMap_AddLineOrder(t *testing.T) {
 	cases := []struct {
 		items    map[string]int
-		expected map[string]int
+		expected map[string][2]int
 	}{
-		{map[string]int{"f": 1, "b": 2}, map[string]int{"f": 1, "b": 2}},
-		{map[string]int{"f": 1, "b": 1, "3": 3}, map[string]int{"f": 1, "b": 1, "3": 3}},
+		{map[string]int{"f": 1, "b": 2}, map[string][2]int{"f": {1, 1}, "b": {2, 1}}},
+		{map[string]int{"f": 1, "b": 1, "3": 3}, map[string][2]int{"f": {1, 1}, "b": {1, 1}, "3": {3, 1}}},
 	}
 
 	for i, c := range cases {
 		var sm = New()
 
 		for item, n := range c.items {
-			sm.AddOrder(item, n)
+			sm.AddLineOrder(item, n, 1)
 		}
 
-		if !isEqualMaps(sm.order, c.expected) {
-			t.Errorf("Usecase [%d]. AddOrder(): expected %v, actual %v", i, c.expected, sm.order)
+		if !isEqualOrders(sm.lineOrder, c.expected) {
+			t.Errorf("Usecase [%d]. AddLineOrder(): expected %v, actual %v", i, c.expected, sm.lineOrder)
 		}
 	}
 
 	var sm = New()
 
-	for i, n := range []int{1, 2, 3, 10, 20, 1, 3} {
-		sm.AddOrder("foo", n)
+	for _, n := range []int{15, 2, 3, 10, 20, 1, 3} {
+		sm.AddLineOrder("foo", 1, n)
+	}
 
-		if sm.order["foo"] != n {
-			t.Errorf("Usecase [%d]. AddOrder() same value: expected %d, actual %d", i, n, sm.order["foo"])
-		}
+	if sm.lineOrder["foo"] != [2]int{1, 1} {
+		t.Errorf("AddLineOrder() same value: expected %s, actual %v", "{1, 1}", sm.lineOrder["foo"])
 	}
 }
 
@@ -85,26 +90,30 @@ func TestSortedMap_AddStopItem(t *testing.T) {
 
 func TestSortedMap_Top(t *testing.T) {
 	items := map[string]int{"f": 1, "b": 2, "h": 2, "d": 5}
-	order := map[string]int{"h": 1, "b": 2}
+	order := map[string][2]int{"h": {1, 2}, "b": {2, 2}}
 	emptyOrder := make(map[string]bool)
 
 	cases := []struct {
 		items     map[string]int
-		order     map[string]int
+		order     map[string][2]int
 		stopItems map[string]bool
 		topSize   int
 		expected  []string
 	}{
-		{items, make(map[string]int), emptyOrder, 1, []string{"d: 5"}},
+		{items, make(map[string][2]int), emptyOrder, 1, []string{"d: 5"}},
 		{items, order, emptyOrder, 2, []string{"d: 5", "h: 2"}},
 		{items, order, emptyOrder, 3, []string{"d: 5", "h: 2", "b: 2"}},
-		{items, make(map[string]int), map[string]bool{"b": true}, 3, []string{"d: 5", "h: 2", "f: 1"}},
-		{items, make(map[string]int), map[string]bool{"b": true, "d": true}, 3, []string{"h: 2", "f: 1", ""}},
-		{items, map[string]int{"b": 1, "h": 2}, map[string]bool{"d": true}, 5, []string{"b: 2", "h: 2", "f: 1", "", ""}},
+		{items, make(map[string][2]int), map[string]bool{"b": true}, 3, []string{"d: 5", "h: 2", "f: 1"}},
+		{items, make(map[string][2]int), map[string]bool{"b": true, "d": true}, 3, []string{"h: 2", "f: 1", ""}},
+		{items,
+			map[string][2]int{"b": {1, 2}, "h": {2, 1}},
+			map[string]bool{"d": true}, 5,
+			[]string{"f: 1", "", "", "b: 2", "h: 2"},
+		},
 	}
 
 	for i, c := range cases {
-		sm := SortedMap{c.items, c.order, c.stopItems}
+		sm := SortedMap{c.items, c.order, c.stopItems, new(sync.Mutex)}
 		top := sm.Top(c.topSize)
 
 		if !isEqualSlices(c.expected, top) {
@@ -114,6 +123,21 @@ func TestSortedMap_Top(t *testing.T) {
 }
 
 func isEqualMaps(a map[string]int, b map[string]int) bool {
+	if len(a) != len(b) {
+		return false
+	}
+
+	for k, v := range a {
+		t, isOk := b[k]
+		if !isOk || t != v {
+			return false
+		}
+	}
+
+	return true
+}
+
+func isEqualOrders(a map[string][2]int, b map[string][2]int) bool {
 	if len(a) != len(b) {
 		return false
 	}
