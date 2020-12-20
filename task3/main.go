@@ -17,13 +17,17 @@ func main() {
 
 	var topSize int
 
+	var countWorkers int
+
 	flag.StringVar(&fileName, "f", "files/src.txt", "file path with text")
 	flag.IntVar(&wordLength, "wl", 3, "word length")
 	flag.IntVar(&topSize, "ts", 10, "size of top list words")
+	flag.IntVar(&countWorkers, "n", 5, "count of workers/threads to process file lines")
 	flag.Parse()
 
 	var sm = sortedmap.New()
 	p := textprocessor.New(sm, wordLength)
+	workers := make(chan struct{}, countWorkers)
 
 	file, err := os.Open(fileName)
 	if err != nil {
@@ -42,11 +46,16 @@ func main() {
 		line := sc.Text()
 
 		wg.Add(1)
+		workers <- struct{}{}
 
 		go func(line string, i int) {
-			defer wg.Done()
-
 			p.ProcessLine(line, i)
+			select {
+			case <-workers:
+				wg.Done()
+			default:
+				fmt.Println("Error [workers]: no workers")
+			}
 		}(line, i)
 	}
 
