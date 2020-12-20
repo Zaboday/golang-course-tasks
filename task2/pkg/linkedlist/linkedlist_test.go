@@ -1,6 +1,7 @@
 package linkedlist
 
 import (
+	"math/rand"
 	"testing"
 )
 
@@ -111,7 +112,7 @@ func TestLinkedListGetMin(t *testing.T) {
 	list.Insert(10000)
 	min, _ := list.getMin()
 	if min != 60 {
-		t.Errorf("getMax test. insert low value %d and getMax %d expected %d", 1, min, 255)
+		t.Errorf("getMin test. insert low value %d and getMin %d expected %d", 1, min, 60)
 	}
 }
 
@@ -128,8 +129,8 @@ func TestLinkedListGetMaxError(t *testing.T) {
 		t.Errorf("Invalid err value for emty list")
 	}
 
-	if err.Error() != "the list is empty" {
-
+	if err != nil && err.Error() != "the list is empty" {
+		t.Errorf("Invalid err message")
 	}
 }
 
@@ -146,7 +147,68 @@ func TestLinkedListGetMinError(t *testing.T) {
 		t.Errorf("Invalid err value for emty list")
 	}
 
-	if err.Error() != "the list is empty" {
-
+	if err != nil && err.Error() != "the list is empty" {
+		t.Errorf("Invalid err message")
 	}
+}
+
+// go test -bench=. -benchmem ./pkg/linkedlist
+var result int
+var n = 1000
+
+func BenchmarkLinkedListInsert5(b *testing.B)            { benchmarkLinkedListInsert(5, b) }
+func BenchmarkLinkedListInsert50(b *testing.B)           { benchmarkLinkedListInsert(50, b) }
+func BenchmarkLinkedListInsert100(b *testing.B)          { benchmarkLinkedListInsert(100, b) }
+func BenchmarkLinkedListInsert100IntoStart(b *testing.B) { benchmarkLinkedListInsertIntoStart(100, b) }
+
+func BenchmarkLinkedListDelete100(b *testing.B)   { benchmarkLinkedListDelete(100, b) }
+func BenchmarkLinkedListDelete1000(b *testing.B)  { benchmarkLinkedListDelete(1000, b) }
+func BenchmarkLinkedListDelete10000(b *testing.B) { benchmarkLinkedListDelete(10000, b) }
+
+func benchmarkLinkedListInsert(size int, b *testing.B) {
+	var r int
+	rand.Seed(1)
+	var x = rand.Intn(n)
+
+	for i := 0; i < b.N; i++ {
+		list := makeList(size)
+		r = list.Insert(i + x)
+	}
+
+	result = r
+}
+
+func benchmarkLinkedListInsertIntoStart(size int, b *testing.B) {
+	var r int
+	rand.Seed(1)
+	var x = rand.Intn(n)
+
+	for i := b.N; i > 0; i-- {
+		list := makeList(size)
+		r = list.Insert(i + x)
+	}
+
+	result = r
+}
+
+func benchmarkLinkedListDelete(size int, b *testing.B) {
+	var r int
+	rand.Seed(1)
+
+	list := makeList(size)
+	for i := 0; i < b.N; i++ {
+		r = list.Delete(i)
+	}
+
+	result = r
+}
+
+func makeList(size int) List {
+	list := List{}
+
+	for i := 0; i < size; i++ {
+		list.Insert(i)
+	}
+
+	return list
 }

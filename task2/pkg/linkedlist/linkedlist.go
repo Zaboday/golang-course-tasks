@@ -30,7 +30,7 @@ func (L *List) DisplayChain() string {
 	return chain
 }
 
-func (L *List) Insert(value int) {
+func (L *List) Insert(value int) int {
 	newItem := &ListItem{
 		value: value,
 	}
@@ -67,13 +67,15 @@ func (L *List) Insert(value int) {
 	}
 
 	L.len++
+
+	return value
 }
 
-func (L *List) Delete(value int) {
+func (L *List) Delete(value int) int {
 	item := L.head
 
 	if item == nil {
-		return
+		return 0
 	}
 
 	for item != nil {
@@ -95,6 +97,8 @@ func (L *List) Delete(value int) {
 		}
 		item = item.next
 	}
+
+	return value
 }
 
 func (L *List) getMax() (max int, err error) {
