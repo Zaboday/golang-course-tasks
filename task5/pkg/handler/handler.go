@@ -2,6 +2,7 @@ package handler
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 )
@@ -9,6 +10,11 @@ import (
 type HttpHandler struct {
 	ctx    context.Context
 	cancel context.CancelFunc
+}
+
+type RequestParameters struct {
+	Text   string `json:"text"`
+	Number int    `json:"number"`
 }
 
 func New(ctx context.Context, cancel context.CancelFunc) *HttpHandler {
@@ -19,7 +25,19 @@ func New(ctx context.Context, cancel context.CancelFunc) *HttpHandler {
 }
 
 func (h *HttpHandler) Text(w http.ResponseWriter, r *http.Request) {
-	fmt.Fprintf(w, "Text!")
+	if r.Method != http.MethodPost {
+		http.Error(w, "Bas Method Request.", http.StatusBadRequest)
+		return
+	}
+
+	p := RequestParameters{}
+	err := json.NewDecoder(r.Body).Decode(&p)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusBadRequest)
+		return
+	}
+	w.Header().Set("Content-Type", "application/json")
+	fmt.Fprintf(w, "Parameters: %+v", p)
 }
 
 func (h *HttpHandler) Stat(w http.ResponseWriter, r *http.Request) {
